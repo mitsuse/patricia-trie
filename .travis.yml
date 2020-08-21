@@ -1,0 +1,18 @@
+language: python
+matrix:
+  include:
+  - python: 3.7
+    dist: bionic
+    sudo: true
+  - python: 3.8
+    dist: bionic
+    sudo: true
+before_install:
+- pip install poetry=='1.0.10'
+install:
+- poetry install
+script:
+- poetry run black --check patricia test_patricia.py time_patricia.py
+- poetry run flake8 --select F patricia test_patricia.py time_patricia.py
+- poetry run python3 test_patricia.py
+- poetry run python3 time_patricia.py
