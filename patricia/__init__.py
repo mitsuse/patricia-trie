@@ -27,11 +27,11 @@ is not necessary to create slices of strings to scan in a window only::
 License: Apache License v2 (http://www.apache.org/licenses/LICENSE-2.0.html)
 """
 
-__author__ = 'Florian Leitner <florian.leitner@gmail.com>'
-__version__ = '10'
+__author__ = "Florian Leitner <florian.leitner@gmail.com>"
+__version__ = "10"
 
 
-class _NonTerminal():
+class _NonTerminal:
     pass
 
 
@@ -57,7 +57,7 @@ def _keys(node, accu):
 def _items(node, accu):
     "Yield key, value pairs of terminal nodes in this branch."
     if node._value is not __NON_TERMINAL__:
-        yield ''.join(accu), node._value
+        yield "".join(accu), node._value
     for edge, child in node._edges.values():
         accu.append(edge)
         for key, value in _items(child, accu):
@@ -74,7 +74,7 @@ def _values(node):
             yield value
 
 
-class trie():
+class trie:
     """
     Usage Example::
 
@@ -139,8 +139,10 @@ class trie():
     @staticmethod
     def __offsets(strlen, start, end):
         # Return the correct start, end offsets for a string of length `strlen`.
-        return (max(0, strlen + start) if start < 0 else start,
-                strlen if end is None else end)
+        return (
+            max(0, strlen + start) if start < 0 else start,
+            strlen if end is None else end,
+        )
 
     @staticmethod
     def __check(value, match, default):
@@ -241,18 +243,18 @@ class trie():
         return _count(self)
 
     def __repr__(self):
-        string = ['trie({']
+        string = ["trie({"]
         first = True
         for key, value in _items(self, []):
             if first:
                 first = False
             else:
-                string.append(', ')
+                string.append(", ")
             string.append(repr(key))
-            string.append(': ')
+            string.append(": ")
             string.append(repr(value))
-        string.append('})')
-        return ''.join(string)
+        string.append("})")
+        return "".join(string)
 
     def key(self, string, start=0, end=None, default=__NON_TERMINAL__):
         """
@@ -274,7 +276,7 @@ class trie():
         else:
             if l == 1:
                 scan = (scan[0], 0)
-            getKey = lambda string, idx, value: string[scan[1]:idx]
+            getKey = lambda string, idx, value: string[scan[1] : idx]
             return self._scan(getKey, *scan)
 
     def value(self, string, start=0, end=None, default=__NON_TERMINAL__):
@@ -331,7 +333,7 @@ class trie():
         else:
             if l == 1:
                 scan = (scan[0], 0)
-            getItem = lambda string, idx, value: (string[scan[1]:idx], value)
+            getItem = lambda string, idx, value: (string[scan[1] : idx], value)
             return self._scan(getItem, *scan)
 
     def isPrefix(self, prefix):
@@ -371,7 +373,7 @@ class trie():
             for edge, child in node._edges.values():
                 if edge.startswith(remainder):
                     node = child
-                    accu.append(edge[len(remainder):])
+                    accu.append(edge[len(remainder) :])
                     break
             else:
                 return iter([])
