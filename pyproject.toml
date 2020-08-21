@@ -9,6 +9,9 @@ authors = [
     "Tomoya Kose <tomoya@mitsuse.jp>"
 ]
 license = "Apache-2.0"
+packages = [
+    { include = "patricia" },
+]
 classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Scientific/Engineering :: Information Analysis",
