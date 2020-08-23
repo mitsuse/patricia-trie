@@ -122,57 +122,7 @@ trie.value(``string``, ``start=0``, ``end=None``, ``default=NULL``)
 trie.values([``string`` [, ``start`` [, ``end`` ]]])
     Return all values (for keys that are a prefix of ``string``
     (beginning at ``start`` (and terminating before ``end``))).
-
-
-History
--------
-
-1. Initial release.
-2. *Update*: Full documentation and corrections.
-3. *Feature*: optional keyword parameters to indicate an offset ``start`` when
-   scanning a string with the methods key(), keys(), item(), items(), value(),
-   and values(), so it is not necessary to slice strings for each scan::
-
-       >>> # Old usage to scan 'string' in 'the string' was:
-       >>> T.keys('the string'[4:])
-       >>> # With the new optional keyword parameter:
-       >>> T.keys('the string', start=4)
-
-4. **Important API change**: item() now returns key, value pairs even when a
-   default value is given, using ``None`` as the "key"::
-
-       >>> # Old behaviour was:
-       >>> T.item('string', default=False)
-       False
-       >>> # While now, the same call produces:
-       >>> T.item('string', default=False)
-       None, False
-
-   *Improvement*: Switched from using dictionaries to two-tuple lists
-   internally (thanks to Pedro Gaio for the suggestion!) to improve the
-   overall performance a bit (about 20% faster on simple tests).
-5. *Bugfix*: When splitting edges while adding a new key that is shorter than
-   the current edge, a index error would have occurred.
-6. *Feature*: Added optional keyword parameter ``end`` to the methods key(),
-   keys(), item(), items(), value(), and values(), so it is not necessary to
-   scan within a window::
-
-       T.key('string', start=2, end=3, default=None)
-       T.keys('string', start=2, end=3)
-
-7. *Improvement*: Switched back to a very efficient internal dictionary
-   implementation; Runs about two- to three times as fast as the two-tuple
-   list from update 4 against the simple (and newly added) ``time_patricia.py``
-   "benchmark".
-8. *Bugfix*: Correct behavior when using a negative start index.
-   Added a comparison to `marisa-trie`_ - by now, it seems, patricia-trie
-   is roughly only a factor two slower than the marisa-trie PyPI version
-   wrapping a C library. Also makes it nice to compare the two usages.
-9. *Bugfix* (15/09/2014): Correct behaviour when using an exactly matching
-   prefix as query (issue described in #1 by @zachrahan). Also fixes
-   code-smells (PEP8, code complexity) and a failing test case code.
-10. *Bugfix* (14/12/2014): Added the missing README to PyPI package.
-    (MANIFEST.in)
+   
    
 Copyright
 ---------
