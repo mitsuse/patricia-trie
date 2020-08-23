@@ -1,8 +1,6 @@
 """
-A PATRICIA trie implementation for efficient matching of string collections on
-text.
-
-This class has an (Py2.7+) API nearly equal to dictionaries.
+A pure Python implementation of a PATRICIA trie for effcient matching of string
+collections on text.
 
 *Deleting* entries is a "half-supported" operation only. The key appears
 "removed", but the trie is not actually changed, only the node state is
@@ -10,7 +8,7 @@ changed from terminal to non-terminal. I.e., if you frequently delete keys,
 the compaction will become fragmented and less efficient. To mitigate this
 effect, make a copy of the trie (using a copy constructor idiom)::
 
-    T = trie(**T)
+    T = Trie(**T)
 
 If you are only interested in scanning for the *presence* of keys, but do not
 care about mapping a value to each key, using `None` as the value of your
@@ -19,15 +17,16 @@ string ``S`` is perfectly fine (because the return value will be the key
 string iff a full match was made and `None` otherwise). In other words, it
 is not necessary to create slices of strings to scan in a window only::
 
-    >>> T = trie(present=None)
+    >>> T = Trie(present=None)
     >>> T.key('is absent here', 3, 9, None) # scan in second word [3:9]
     >>> T.key('is present here', 3, 10, None) # scan in second word [3:10]
     'present'
-
-License: Apache License v2 (http://www.apache.org/licenses/LICENSE-2.0.html)
 """
 
-__author__ = "Florian Leitner <florian.leitner@gmail.com>"
+__author__ = [
+    "Florian Leitner <florian.leitner@gmail.com>",
+    "Tomoya Kose <tomoya@mitsuse.jp>",
+]
 __version__ = "10"
 
 
@@ -74,11 +73,11 @@ def _values(node):
             yield value
 
 
-class trie:
+class Trie:
     """
     Usage Example::
 
-      >>> T = trie('root', key='value', king='kong') # a root and two nodes
+      >>> T = Trie('root', key='value', king='kong') # a root and two nodes
       >>> T['four'] = None # setting new values as in a dict
       >>> '' in T # check if the value exits (note: the [empty] root is '')
       True
@@ -171,7 +170,7 @@ class trie:
 
     def _scan(self, rvalFun, string, start=0, *end):
         node = self
-        start, _ = trie.__offsets(len(string), start, None)
+        start, _ = Trie.__offsets(len(string), start, None)
         while node is not None:
             if node._value is not __NON_TERMINAL__:
                 yield rvalFun(string, start, node._value)
@@ -186,7 +185,7 @@ class trie:
                 node, idx = node.__followEdge(key, idx)
             else:
                 # no common prefix, create a new edge and (leaf) node
-                node._edges[key[idx]] = (key[idx:], trie(value))
+                node._edges[key[idx]] = (key[idx:], Trie(value))
                 break
         else:
             node._value = value
@@ -202,7 +201,7 @@ class trie:
             last = min(len(edge), len(key) - idx)
             while pos < last and edge[pos] == key[idx + pos]:
                 pos += 1
-            split = trie()
+            split = Trie()
             split._edges[edge[pos]] = (edge[pos:], child)
             self._edges[key[idx]] = (edge[:pos], split)
             return split, idx + pos
@@ -243,7 +242,7 @@ class trie:
         return _count(self)
 
     def __repr__(self):
-        string = ["trie({"]
+        string = ["Trie({"]
         first = True
         for key, value in _items(self, []):
             if first:
@@ -311,7 +310,7 @@ class trie:
         """
         node = self
         strlen = len(string)
-        start, end = trie.__offsets(strlen, start, end)
+        start, end = Trie.__offsets(strlen, start, end)
         idx = start
         last = self._value
         while idx < strlen:
@@ -320,7 +319,7 @@ class trie:
                 break
             elif node._value is not __NON_TERMINAL__:
                 last = node._value
-        return trie.__check(last, string[start:idx], default)
+        return Trie.__check(last, string[start:idx], default)
 
     def items(self, *scan):
         """
@@ -336,7 +335,7 @@ class trie:
             getItem = lambda string, idx, value: (string[scan[1] : idx], value)
             return self._scan(getItem, *scan)
 
-    def isPrefix(self, prefix):
+    def is_prefix(self, prefix):
         "Return True if any key starts with ``prefix``."
         node = self
         plen = len(prefix)
