@@ -47,10 +47,10 @@ def create_dict(words):
 
 
 def create_trie(words):
-    from patricia import trie
+    from patricia import Trie
 
     values = {k: i for i, k in enumerate(words)}
-    return trie(**values)
+    return Trie(**values)
 
 
 def get(d, words):
