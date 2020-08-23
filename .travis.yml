@@ -13,5 +13,6 @@ install:
 - poetry install
 script:
 - poetry run black --check patricia tests
+- poetry run mypy patricia tests
 - poetry run flake8 --select F patricia tests
 - poetry run pytest
