@@ -178,11 +178,3 @@ Copyright
 ---------
 
 Copyright 2013, Florian Leitner. All rights reserved.
-
-License
--------
-
-`Apache License v2 <http://www.apache.org/licenses/LICENSE-2.0.html>`_
-
-.. _marisa-trie: https://code.google.com/p/marisa-trie/
-.. _patricia-trie: https://www.github.com/fnl/patricia-trie/
