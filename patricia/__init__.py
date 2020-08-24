@@ -1,3 +1,17 @@
+from __future__ import annotations
+
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import Iterator
+from typing import List
+from typing import Mapping
+from typing import Optional
+from typing import Tuple
+from typing import Union
+
+# from collections.abc import Mapping
+
 """
 A pure Python implementation of a PATRICIA trie for effcient matching of string
 collections on text.
@@ -39,7 +53,7 @@ __NON_TERMINAL__ = _NonTerminal()
 # recursion functions
 
 
-def _count(node):
+def _count(node: Trie) -> int:
     "Count the number of terminal nodes in this branch."
     count = 0 if (node._value is __NON_TERMINAL__) else 1
     for _, child in node._edges.values():
@@ -47,13 +61,13 @@ def _count(node):
     return count
 
 
-def _keys(node, accu):
+def _keys(node: Trie, accu: List[str]) -> Iterator[str]:
     "Yield keys of terminal nodes in this branch."
     for key, value in _items(node, accu):
         yield key
 
 
-def _items(node, accu):
+def _items(node: Trie, accu: List[str]) -> Iterator[Tuple[str, Union[int, _NonTerminal]]]:
     "Yield key, value pairs of terminal nodes in this branch."
     if node._value is not __NON_TERMINAL__:
         yield "".join(accu), node._value
@@ -64,7 +78,7 @@ def _items(node, accu):
         accu.pop()
 
 
-def _values(node):
+def _values(node: Trie) -> Iterator[Union[int, _NonTerminal]]:
     "Yield values of terminal nodes in this branch."
     if node._value is not __NON_TERMINAL__:
         yield node._value
@@ -73,7 +87,7 @@ def _values(node):
             yield value
 
 
-class Trie:
+class Trie(Mapping[str, int]):
     """
     Usage Example::
 
@@ -118,25 +132,22 @@ class Trie:
       ['key', 'king']
     """
 
-    def __init__(self, *value, **branch):
+    def __init__(self, value: Optional[int] = None, **branch: int) -> None:
         """
         Create a new tree node.
         Any arguments will be used as the ``value`` of this node.
         If keyword arguments are given, they initialize a whole ``branch``.
         Note that `None` is a valid value for a node.
         """
-        self._edges = {}
-        self._value = __NON_TERMINAL__
-        if len(value):
-            if len(value) == 1:
-                self._value = value[0]
-            else:
-                self._value = value
+        self._edges: Dict[str, Tuple[str, Trie]] = {}
+        self._value: Union[int, _NonTerminal] = __NON_TERMINAL__
+        if value is not None:
+            self._value = value
         for key, val in branch.items():
             self[key] = val
 
     @staticmethod
-    def __offsets(strlen, start, end):
+    def __offsets(strlen: int, start: int, end: Optional[int]) -> Tuple[int, int]:
         # Return the correct start, end offsets for a string of length `strlen`.
         return (
             max(0, strlen + start) if start < 0 else start,
@@ -144,7 +155,7 @@ class Trie:
         )
 
     @staticmethod
-    def __check(value, match, default):
+    def __check(value: Union[int, _NonTerminal], match: str, default: Optional[_NonTerminal]) -> Tuple[Optional[str], Union[int, _NonTerminal, None]]:
         if value is not __NON_TERMINAL__:
             return match, value
         elif default is not __NON_TERMINAL__:
@@ -152,31 +163,31 @@ class Trie:
         else:
             raise KeyError(match)
 
-    def _find(self, path, start, *end):
+    def _find(self, path: str, start: int, end: Optional[int] = None) -> Tuple[Optional[Trie], int]:
         if start < len(path) and path[start] in self._edges:
             edge, child = self._edges[path[start]]
-            if path.startswith(edge, start, *end):
+            if path.startswith(edge, start, end):
                 return child, start + len(edge)
         return None, start  # return None
 
-    def _next(self, path, start, *end):
+    def _next(self, path: str, start: int, end: Optional[int] = None) -> Tuple[Trie, int]:
         try:
             edge, child = self._edges[path[start]]
-            if path.startswith(edge, start, *end):
+            if path.startswith(edge, start, end):
                 return child, start + len(edge)
         except KeyError:
             pass
         raise KeyError(path)  # raise error
 
-    def _scan(self, rvalFun, string, start=0, *end):
-        node = self
+    def _scan(self, rvalFun: Callable[[str, int, Union[int, _NonTerminal]], Any], string: str, start: int = 0, end: Optional[int] = None) -> Iterator[Any]:
+        node: Optional[Trie] = self
         start, _ = Trie.__offsets(len(string), start, None)
         while node is not None:
             if node._value is not __NON_TERMINAL__:
                 yield rvalFun(string, start, node._value)
-            node, start = node._find(string, start, *end)
+            node, start = node._find(string, start, end)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: int) -> None:
         node = self
         keylen = len(key)
         idx = 0
@@ -190,7 +201,7 @@ class Trie:
         else:
             node._value = value
 
-    def __followEdge(self, key, idx):
+    def __followEdge(self, key: str, idx: int) -> Tuple[Trie, int]:
         edge, child = self._edges[key[idx]]
         if key.startswith(edge, idx):
             # the whole prefix matches; advance
@@ -206,18 +217,18 @@ class Trie:
             self._edges[key[idx]] = (edge[:pos], split)
             return split, idx + pos
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> int:
         node = self
         keylen = len(key)
         idx = 0
         while keylen != idx:
             node, idx = node._next(key, idx)
-        if node._value is __NON_TERMINAL__:
+        if isinstance(node._value, _NonTerminal):
             raise KeyError(key)
         else:
             return node._value
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
         node = self
         keylen = len(key)
         idx = 0
@@ -227,21 +238,24 @@ class Trie:
             raise KeyError(key)
         node._value = __NON_TERMINAL__
 
-    def __contains__(self, key):
-        node = self
-        keylen = len(key)
-        idx = 0
-        while idx != keylen and node is not None:
-            node, idx = node._find(key, idx)
-        return False if node is None else (node._value is not __NON_TERMINAL__)
+    def __contains__(self, key: Any) -> bool:
+        if isinstance(key, str):
+            node: Optional[Trie] = self
+            keylen = len(key)
+            idx = 0
+            while idx != keylen and node is not None:
+                node, idx = node._find(key, idx)
+            return False if node is None else (node._value is not __NON_TERMINAL__)
+        else:
+            return False
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         return _keys(self, [])
 
-    def __len__(self):
+    def __len__(self) -> int:
         return _count(self)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         string = ["Trie({"]
         first = True
         for key, value in _items(self, []):
@@ -255,7 +269,13 @@ class Trie:
         string.append("})")
         return "".join(string)
 
-    def key(self, string, start=0, end=None, default=__NON_TERMINAL__):
+    def key(
+        self,
+        string: str,
+        start: int = 0,
+        end: Optional[int] = None,
+        default: Optional[_NonTerminal] = __NON_TERMINAL__,
+    ) -> Optional[str]:
         """
         Return the longest key that is a prefix of ``string`` (beginning at
         ``start`` and ending at ``end``).
@@ -264,21 +284,28 @@ class Trie:
         """
         return self.item(string, start, end, default)[0]
 
-    def keys(self, *scan):
-        """
-        Return all keys (that are a prefix of ``string``
-        (beginning at ``start`` (and terminating before ``end``))).
-        """
-        l = len(scan)
-        if l == 0:
-            return _keys(self, [])
-        else:
-            if l == 1:
-                scan = (scan[0], 0)
-            getKey = lambda string, idx, value: string[scan[1] : idx]
-            return self._scan(getKey, *scan)
+    # FIXME: The signature is incompatible with Mapping.
+    # def keys(self, *scan: Any) -> Iterator[str]:
+    #     """
+    #     Return all keys (that are a prefix of ``string``
+    #     (beginning at ``start`` (and terminating before ``end``))).
+    #     """
+    #     l = len(scan)
+    #     if l == 0:
+    #         return _keys(self, [])
+    #     else:
+    #         if l == 1:
+    #             scan = (scan[0], 0)
+    #         getKey = lambda string, idx, value: string[scan[1] : idx]
+    #         return self._scan(getKey, *scan)
 
-    def value(self, string, start=0, end=None, default=__NON_TERMINAL__):
+    def value(
+        self,
+        string: str,
+        start: int = 0,
+        end: Optional[int] = None,
+        default: Optional[_NonTerminal] = __NON_TERMINAL__,
+    ) -> Union[int, _NonTerminal, None]:
         """
         Return the value of the longest key that is a prefix of ``string``
         (beginning at ``start`` and ending at ``end``).
@@ -287,7 +314,7 @@ class Trie:
         """
         return self.item(string, start, end, default)[1]
 
-    def values(self, *scan):
+    def values(self, *scan: Any) -> Any:
         """
         Return all values (for keys that are a prefix of ``string``
         (beginning at ``start`` (and terminating before ``end``))).
@@ -301,19 +328,25 @@ class Trie:
             getValue = lambda string, idx, value: value
             return self._scan(getValue, *scan)
 
-    def item(self, string, start=0, end=None, default=__NON_TERMINAL__):
+    def item(
+        self,
+        string: str,
+        start: int = 0,
+        end: Optional[int] = None,
+        default: Optional[_NonTerminal] = __NON_TERMINAL__,
+    ) -> Tuple[Optional[str], Union[int, _NonTerminal, None]]:
         """
         Return the key, value pair of the longest key that is a prefix of
         ``string`` (beginning at ``start`` and ending at ``end``).
         If no key matches, raise a `KeyError` or return the `None`,
         ``default`` pair if any ``default`` value was set.
         """
-        node = self
+        node: Optional[Trie] = self
         strlen = len(string)
         start, end = Trie.__offsets(strlen, start, end)
         idx = start
         last = self._value
-        while idx < strlen:
+        while node is not None and idx < strlen:
             node, idx = node._find(string, idx, end)
             if node is None:
                 break
@@ -321,7 +354,7 @@ class Trie:
                 last = node._value
         return Trie.__check(last, string[start:idx], default)
 
-    def items(self, *scan):
+    def items(self, *scan: Any) -> Any:
         """
         Return all key, value pairs (for keys that are a prefix of ``string``
         (beginning at ``start`` (and terminating before ``end``))).
@@ -335,7 +368,7 @@ class Trie:
             getItem = lambda string, idx, value: (string[scan[1] : idx], value)
             return self._scan(getItem, *scan)
 
-    def is_prefix(self, prefix):
+    def is_prefix(self, prefix: str) -> bool:
         "Return True if any key starts with ``prefix``."
         node = self
         plen = len(prefix)
@@ -352,7 +385,7 @@ class Trie:
                 return False
         return True
 
-    def iter(self, prefix):
+    def iter(self, prefix: str) -> Iterator[Any]:
         "Return an iterator over all keys that start with ``prefix``."
         node = self
         plen = len(prefix)
@@ -364,7 +397,7 @@ class Trie:
                 break
         return node._accumulate(prefix, idx)
 
-    def _accumulate(self, prefix, idx):
+    def _accumulate(self, prefix: str, idx: int) -> Iterator[str]:
         node = self
         accu = [prefix]
         if idx != len(prefix):
